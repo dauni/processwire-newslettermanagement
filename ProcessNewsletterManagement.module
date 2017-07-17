@@ -1,0 +1,251 @@
+<?php namespace ProcessWire;
+
+/**
+ * Hello Process Module
+ *
+ * A starting point skeleton from which to build your own Process module.
+ * Process modules are used primarily for building admin applications and tools.
+ * This module also creates a page in the ProcessWire admin to run itself from.
+ *
+ * Copyright [year] by [your name]
+ *
+ * ProcessWire 2.x
+ * Copyright (C) 2014 by Ryan Cramer
+ * Licensed under GNU/GPL v2, see LICENSE.TXT
+ *
+ * http://processwire.com
+ *
+ */
+#class ProcessNewsletterManagement extends Process {
+class ProcessNewsletterManagement extends Process implements ConfigurableModule {
+
+
+	/**
+	 * This is an optional initialization function called before any execute functions.
+	 *
+	 * If you don't need to do any initialization common to every execution of this module,
+	 * you can simply remove this init() method.
+	 *
+	 */
+	public function init() {
+
+		parent::init(); // always remember to call the parent init
+	}
+
+	/**
+	 * This function is executed when a page with your Process assigned is accessed.
+	 *
+	 * This can be seen as your main or index function. You'll probably want to replace
+	 * everything in this function.
+	 *
+	 */
+	public function ___execute() {
+
+
+		// generate some navigation
+
+		$out = "
+			<h2>$this->greeting</h2>
+			<dl class='nav'>
+
+				
+				<dt><a href='./users/'>Newsletterempfänger</a></dt>
+				<dd>" . _('Zeigt die Newsletterempfänger an.') . "</dd>
+				
+				<dt><a href=' ./CSV / '>CSV-Export</a></dt>
+				<dd>" . _('Spuckt das CSV mit den Emails aus.') . "</dd>
+			</dl>
+			";
+
+
+		#$pl = $this->modules->get("ProcessPageList");
+		#$pl->set('id',29); // or any other parent page
+		#return $pl->execute();
+
+		return $out;
+	}
+
+
+	public function ___executeUsers() {
+		$this->headline(_('Empfängerliste'));
+		$this->breadcrumb(' ../', _('Newsletter'));
+
+		#if (null !== $this->input->get('filter_status')) echo 'ja'; else echo 'nein';
+		$filter_status = $this->input->get('filter_status');
+		if ($this->session->get('ProcessNewsletterFilterField') && null === $this->input->get('filter_status')) {
+			$filter_status = $this->session->get('ProcessNewsletterFilterField');
+		}
+
+		#echo $filter_status;
+		$user = $this->wire('users')->find("roles=newsletter,limit=" . $this->resperpage);
+		if ($filter_status)
+			$user = $this->wire('users')->find("roles=newsletter,status=" . $filter_status . ",limit=" . $this->resperpage);
+
+
+		$table = $this->modules->get("MarkupAdminDataTable");
+		#$table->setEncodeEntities(false);
+
+
+		$header = array();
+		$header[] = $this->_x('Aktion', 'list-thead');
+		$header[] = $this->_x('E-Mail', 'list-thead');
+		$header[] = $this->_x('Vorname', 'list-thead');
+		$header[] = $this->_x('Nachname', 'list-thead');
+		$header[] = $this->_x('Sprache', 'list-thead');
+		$header[] = $this->_x('Datum', 'list-thead');
+		$table->headerRow($header);
+
+		$table->action(array('Exportiere aktuelle Ansicht ...' => '../csv'));
+
+
+		foreach ($user as $u) {
+			#$row = $this->getListTableRow($u, $useLabels);
+			#if (!empty($row)) $rows[] = $row;
+
+			//http://cheatsheet.processwire.com/page/page-status/
+			$data = array(
+				($u->status == 1 ? 'Angemeldet' : 'Abgemeldet'),
+				$u->email,
+				$u->firstname,
+				$u->surname,
+				wire('pages')->get(1)->getLanguageValue($u->language, 'name'),
+				($u->timestamp ? date('d.m.Y H:m:i', $u->timestamp) : '')
+
+			);
+			$table->row($data);
+		}
+
+
+		$pagination = $user->renderPager();
+		$out = "<h2>" . _('Empfängerliste') . " </h2 > " . $this->getListFilterForm()->render() . $table->render() . $pagination;
+
+
+		return $out;
+	}
+
+	public function ___getListFilterForm() {
+
+		$input = $this->input;
+
+		/** @var InputfieldForm $form */
+		$form = $this->modules->get("InputfieldForm");
+		$form->id = 'filters';
+		$form->method = 'get';
+		$form->action = ' ./';
+
+		/** @var InputfieldFieldset $fieldset */
+		$fieldset = $this->modules->get("InputfieldFieldset");
+		$fieldset->entityEncodeLabel = false;
+		$fieldset->label = $this->_("Filters"); // Template list filters headline
+		$fieldset->icon = 'filter';
+		$fieldset->collapsed = Inputfield::collapsedNo;
+		$form->add($fieldset);
+
+		// --------------------------------------
+
+		/** @var InputfieldSelect $field */
+		$field = $this->modules->get("InputfieldSelect");
+		$field->attr('status + name', 'filter_status');
+		$field->attr('id', 'userfilter');
+		$field->label = $this->_("Filter by Status");
+		$field->description = $this->_("Select a Status and only users with that status will be shown. "); // Filter by Field, description
+		$field->addOption('0', $this->_x('Show All', 'filter-select'));
+
+
+		$field->addOption(1, "Aktiv");
+		$field->addOption(1024, "Inaktiv");
+
+		if ($input->get('filter_status') !== null) {
+			$filterField = $this->sanitizer->name($input->get('filter_status'));
+			$this->session->set('ProcessNewsletterFilterField', $filterField);
+		} else {
+			$filterField = $this->session->get('ProcessNewsletterFilterField');
+		}
+		$field->attr('value', $filterField);
+		$field->collapsed = $filterField ? Inputfield::collapsedNo : Inputfield::collapsedNo;
+		$fieldset->add($field);
+		if ($filterField) $filterField = $this->fields->get($filterField);
+		if ($filterField) $form->description = sprintf($this->_('User with status: %s'), $filterField->name);
+
+		// --------------------------------------
+
+
+		if ($filterField) $fieldset->collapsed = Inputfield::collapsedNo;
+
+		return $form;
+	}
+
+	public function ___executeCSV() {
+		wire()->addHookBefore("PageRender::renderPage", $this, "hookCSV");
+		return $this->hookCSV();
+	}
+
+	public function hookCSV() {
+		#$data = array('Name', 'Email', 'Status');
+
+		$data = array(array(
+			$this->_x('Aktion', 'list-thead'),
+			$this->_x('E-Mail', 'list-thead'),
+			$this->_x('Vorname', 'list-thead'),
+			$this->_x('Nachname', 'list-thead'),
+			$this->_x('Sprache', 'list-thead'),
+			$this->_x('Datum', 'list-thead')
+		));
+
+		$filter_status = $this->input->get('filter_status');
+		if ($this->session->get('ProcessNewsletterFilterField') && null === $this->input->get('filter_status')) {
+			$filter_status = $this->session->get('ProcessNewsletterFilterField');
+		}
+
+		//http://cheatsheet.processwire.com/page/page-status/
+		if ($this->wire('input')->urlSegment2 == 'all') {
+			$user = $this->wire('users')->find("roles=newsletter")->setLimit(3);
+		} elseif ($this->wire('input')->urlSegment2 == 'subscribed') {
+			$user = $this->wire('users')->find("roles=newsletter, status=1");
+		} elseif ($this->wire('input')->urlSegment2 == 'unsubscribed') {
+			$user = $this->wire('users')->find("roles=newsletter, status=1024");
+		} else {
+			$user = $this->wire('users')->find("roles=newsletter, status=" . $filter_status);
+		}
+		foreach ($user as $u) {
+			$data[] = array($u->status, $u->email, $u->firstname, $u->surname, wire('pages')->get(1)->getLanguageValue($u->language, 'name'), ($u->timestamp ? date('d.m.Y H:m:i', $u->timestamp) : ''));
+		}
+
+
+		$path = $this->config->paths->files;
+		$fp = fopen($path . 'newsletter_users.csv', 'w');
+		foreach ($data as $fields) fputcsv($fp, $fields, ';');
+		fclose($fp);
+		wireSendFile($path . 'newsletter_users.csv', array('forceDownload' => true));
+
+		#echo $this->wire('input')->urlSegment1; //csv
+		#echo $this->wire('input')->urlSegment2; //all - subscribed - unsubscribed
+		#print_r($data);
+	}
+
+	/**
+	 * Called only when your module is installed
+	 *
+	 * If you don't need anything here, you can simply remove this method .
+	 *
+	 */
+	public function ___install() {
+		parent::___install(); // always remember to call parent method
+	}
+
+
+	/**
+	 * Called only when your module is uninstalled
+	 *
+	 * This should return the site to the same state it was in before the module was installed.
+	 *
+	 * If you don't need anything here, you can simply remove this method.
+	 *
+	 */
+	public function ___uninstall() {
+		parent::___uninstall(); // always remember to call parent method
+	}
+
+
+}
+
