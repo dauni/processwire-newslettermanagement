@@ -28,7 +28,7 @@ $info = array(
 	'icon' => 'newspaper-o',
 
 	// URL to more info: change to your full modules.processwire.com URL (if available), or something else if you prefer
-	'href' => 'http://pwmod.danielpichler.com/NewsletterManagement',
+	'href' => 'https://github.com/dauni/processwire-newslettermanagement',
 
 	// name of permission required of users to execute this Process (optional)
 	'permission' => 'newsletter',
