@@ -48,11 +48,11 @@ $info = array(
 	// optional extra navigation that appears in admin
 	// if you change this, you'll need to a Modules > Refresh to see changes
 	'nav' => array(
-		array(
+		/*array(
 			'url' => 'users/',
 			'label' => _('Empfängerliste'),
 			'icon' => 'align-justify',
-		),
+		),*/
 
 		array(
 			'url' => 'CSV/all',

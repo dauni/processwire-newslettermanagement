@@ -1,13 +1,13 @@
 <?php namespace ProcessWire;
 
 /**
- * Hello Process Module
+ * NewsletterManagement
  *
  * A starting point skeleton from which to build your own Process module.
  * Process modules are used primarily for building admin applications and tools.
  * This module also creates a page in the ProcessWire admin to run itself from.
  *
- * Copyright [year] by [your name]
+ * Copyright 2017 by Daniel Pichler
  *
  * ProcessWire 2.x
  * Copyright (C) 2014 by Ryan Cramer
@@ -16,7 +16,7 @@
  * http://processwire.com
  *
  */
-#class ProcessNewsletterManagement extends Process {
+
 class ProcessNewsletterManagement extends Process implements ConfigurableModule {
 
 
@@ -41,19 +41,17 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 	 */
 	public function ___execute() {
 
-
 		// generate some navigation
-
 		$out = "
 			<h2>$this->greeting</h2>
 			<dl class='nav'>
-
 				
 				<dt><a href='./users/'>Newsletterempfänger</a></dt>
 				<dd>" . _('Zeigt die Newsletterempfänger an.') . "</dd>
 				
-				<dt><a href=' ./CSV / '>CSV-Export</a></dt>
-				<dd>" . _('Spuckt das CSV mit den Emails aus.') . "</dd>
+				<dt><a href='./CSV/subscribed'>CSV-Export</a></dt>
+				<dd>" . _('Spuckt ein CSV mit allen angemeldeten Newsletter-Benutzern aus.') . "</dd>
+				
 			</dl>
 			";
 
@@ -62,13 +60,16 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 		#$pl->set('id',29); // or any other parent page
 		#return $pl->execute();
 
-		return $out;
+		//Direkt in die Verwaltung springen, das Startseitenmenü hat keinen Sinn
+		#return $out;
+
+		return $this->___executeUsers();
 	}
 
 
 	public function ___executeUsers() {
 		$this->headline(_('Empfängerliste'));
-		$this->breadcrumb(' ../', _('Newsletter'));
+		$this->breadcrumb(' ./', _('Newsletter'));
 
 		#if (null !== $this->input->get('filter_status')) echo 'ja'; else echo 'nein';
 		$filter_status = $this->input->get('filter_status');

@@ -7,7 +7,7 @@
 
 $(document).ready(function () {
     // do something
-console.log('lalala');
+    //console.log('lalala');
     //onchange="$(this.form).trigger('submit')"
 
     $('#userfilter').on('change', function () {
