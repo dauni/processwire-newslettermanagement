@@ -87,7 +87,7 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 
 
 		$header = array();
-		$header[] = $this->_x('Aktion', 'list-thead');
+		$header[] = $this->_x('Status', 'list-thead');
 		$header[] = $this->_x('E-Mail', 'list-thead');
 		$header[] = $this->_x('Vorname', 'list-thead');
 		$header[] = $this->_x('Nachname', 'list-thead');
@@ -95,7 +95,7 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 		$header[] = $this->_x('Datum', 'list-thead');
 		$table->headerRow($header);
 
-		$table->action(array('Exportiere aktuelle Ansicht ...' => '../csv'));
+		$table->action(array('Exportiere aktuellen Filter ...' => '../CSV'));
 
 
 		foreach ($user as $u) {
@@ -152,8 +152,8 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 		$field->addOption('0', $this->_x('Show All', 'filter-select'));
 
 
-		$field->addOption(1, "Aktiv");
-		$field->addOption(1024, "Inaktiv");
+		$field->addOption(1, "Angemeldet");
+		$field->addOption(1024, "Abgemeldet");
 
 		if ($input->get('filter_status') !== null) {
 			$filterField = $this->sanitizer->name($input->get('filter_status'));
@@ -184,7 +184,7 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 		#$data = array('Name', 'Email', 'Status');
 
 		$data = array(array(
-			$this->_x('Aktion', 'list-thead'),
+			$this->_x('Status', 'list-thead'),
 			$this->_x('E-Mail', 'list-thead'),
 			$this->_x('Vorname', 'list-thead'),
 			$this->_x('Nachname', 'list-thead'),
@@ -199,16 +199,31 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 
 		//http://cheatsheet.processwire.com/page/page-status/
 		if ($this->wire('input')->urlSegment2 == 'all') {
-			$user = $this->wire('users')->find("roles=newsletter")->setLimit(3);
+			$user = $this->wire('users')->find("roles=newsletter");
 		} elseif ($this->wire('input')->urlSegment2 == 'subscribed') {
 			$user = $this->wire('users')->find("roles=newsletter, status=1");
 		} elseif ($this->wire('input')->urlSegment2 == 'unsubscribed') {
 			$user = $this->wire('users')->find("roles=newsletter, status=1024");
 		} else {
-			$user = $this->wire('users')->find("roles=newsletter, status=" . $filter_status);
+			//Filter Status aus Session (Dropdown)
+			//Bei "Show all" ist kein Status in der Session
+			if (!$filter_status)
+				$user = $this->wire('users')->find("roles=newsletter");
+			else
+				$user = $this->wire('users')->find("roles=newsletter, status=" . $filter_status);
 		}
 		foreach ($user as $u) {
-			$data[] = array($u->status, $u->email, $u->firstname, $u->surname, wire('pages')->get(1)->getLanguageValue($u->language, 'name'), ($u->timestamp ? date('d.m.Y H:m:i', $u->timestamp) : ''));
+			$status[1] = "Angemeldet";
+			$status[1024] = "Abgemeldet";
+
+			$data[] = array(
+				$status[$u->status],
+				$u->email,
+				$u->firstname,
+				$u->surname,
+				wire('pages')->get(1)->getLanguageValue($u->language, 'name'),
+				($u->timestamp ? date('d.m.Y H:m:i', $u->timestamp) : '')
+			);
 		}
 
 
@@ -218,9 +233,6 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 		fclose($fp);
 		wireSendFile($path . 'newsletter_users.csv', array('forceDownload' => true));
 
-		#echo $this->wire('input')->urlSegment1; //csv
-		#echo $this->wire('input')->urlSegment2; //all - subscribed - unsubscribed
-		#print_r($data);
 	}
 
 	/**
