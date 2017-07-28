@@ -110,7 +110,7 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 				$u->firstname,
 				$u->surname,
 				wire('pages')->get(1)->getLanguageValue($u->language, 'name'),
-				($u->timestamp ? date('d.m.Y H:m:i', $u->timestamp) : '')
+				($u->timestamp ? date('d.m.Y H:i:s', $u->timestamp) : '')
 
 			);
 			$table->row($data);
@@ -223,7 +223,7 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 				$u->firstname,
 				$u->surname,
 				wire('pages')->get(1)->getLanguageValue($u->language, 'name'),
-				($u->timestamp ? date('d.m.Y H:m:i', $u->timestamp) : '')
+				($u->timestamp ? date('d.m.Y H:i:s', $u->timestamp) : '')
 			);
 		}
 
