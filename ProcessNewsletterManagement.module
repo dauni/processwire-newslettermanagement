@@ -79,7 +79,9 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 
 		#echo $filter_status;
 		$user = $this->wire('users')->find("roles=newsletter,limit=" . $this->resperpage);
-		if ($filter_status)
+		if ($filter_status == 9999)
+			$user = $this->wire('users')->find("roles=newsletter,confirmmail=sent,limit=" . $this->resperpage);
+		elseif ($filter_status)
 			$user = $this->wire('users')->find("roles=newsletter,status=" . $filter_status . ",limit=" . $this->resperpage);
 
 
@@ -96,16 +98,28 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 		$header[] = $this->_x('Datum', 'list-thead');
 		$table->headerRow($header);
 
-		$table->action(array('Exportiere aktuellen Filter ...' => '../CSV'));
+		if ($filter_status != 9999)
+		$table->action(array('Exportiere aktuellen Filter ...' => 'CSV'));
 
 
 		foreach ($user as $u) {
 			#$row = $this->getListTableRow($u, $useLabels);
 			#if (!empty($row)) $rows[] = $row;
 
+
 			//http://cheatsheet.processwire.com/page/page-status/
+
+			$status[0] = "Angemeldet";
+			$status[1] = "Angemeldet";
+			$status[1024] = "Abgemeldet";
+			$status[9999] = "Nicht bestätigt";
+
+			$userstatus = $u->status;
+			if ($u->confirmmail == 'sent')
+				$userstatus = 9999;
 			$data = array(
-				($u->status == 1 ? 'Angemeldet' : 'Abgemeldet'),
+				//($u->status == 1 ? 'Angemeldet' : 'Abgemeldet'),
+				$status[$userstatus],
 				$u->email,
 				$u->firstname,
 				$u->surname,
@@ -155,6 +169,7 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 
 		$field->addOption(1, "Angemeldet");
 		$field->addOption(1024, "Abgemeldet");
+		$field->addOption(9999, "Nicht bestätigt");
 
 		if ($input->get('filter_status') !== null) {
 			$filterField = $this->sanitizer->name($input->get('filter_status'));
@@ -166,7 +181,7 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 		$field->collapsed = $filterField ? Inputfield::collapsedNo : Inputfield::collapsedNo;
 		$fieldset->add($field);
 		if ($filterField) $filterField = $this->fields->get($filterField);
-		if ($filterField) $form->description = sprintf($this->_('User with status: %s'), $filterField->name);
+		#if ($filterField) $form->description = sprintf($this->_('User with status: %s'), $filterField->name);
 
 		// --------------------------------------
 
@@ -216,6 +231,9 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 		foreach ($user as $u) {
 			$status[1] = "Angemeldet";
 			$status[1024] = "Abgemeldet";
+			if ($u->confirmmail == 'sent') {
+				$status[1024] = "Nichtbestätigt";
+			}
 
 			$data[] = array(
 				$status[$u->status],
