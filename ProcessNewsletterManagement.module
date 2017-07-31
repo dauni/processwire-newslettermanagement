@@ -116,21 +116,24 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 			$status[9999] = "Nicht bestätigt";
 
 			$userstatus = $u->status;
+			$stop = false;
 			if ($u->confirmmail == 'sent') {
 				$userstatus = 9999;
-				if ($filter_status != 9999 && $filter_status != 0) break;
+				if ($filter_status != 9999 && $filter_status != 0) $stop = true;
 			}
-			$data = array(
-				//($u->status == 1 ? 'Angemeldet' : 'Abgemeldet'),
-				$status[$userstatus],
-				$u->email,
-				$u->firstname,
-				$u->surname,
-				wire('pages')->get(1)->getLanguageValue($u->language, 'name'),
-				($u->timestamp ? date('d.m.Y H:i:s', $u->timestamp) : '')
+			if (!$stop) {
+				$data = array(
+					//($u->status == 1 ? 'Angemeldet' : 'Abgemeldet'),
+					$status[$userstatus],
+					$u->email,
+					$u->firstname,
+					$u->surname,
+					wire('pages')->get(1)->getLanguageValue($u->language, 'name'),
+					($u->timestamp ? date('d.m.Y H:i:s', $u->timestamp) : '')
 
-			);
-			$table->row($data);
+				);
+				$table->row($data);
+			}
 		}
 
 
@@ -237,22 +240,24 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 
 			$status[1] = "Angemeldet";
 			$status[1024] = "Abgemeldet";
+			$stop = false;
 			if ($u->confirmmail == 'sent') {
 				$status[1024] = "Nichtbestätigt";
 				$status[1] = "Nichtbestätigt";
-				if ($filter_status != 9999 && $filter_status != 0) break;
-				if ($this->wire('input')->urlSegment2 == 'subscribed') break;
-				if ($this->wire('input')->urlSegment2 == 'unsubscribed') break;
+				if ($filter_status != 9999 && $filter_status != 0) $stop = true;
+				if ($this->wire('input')->urlSegment2 == 'subscribed') $stop = true;
+				if ($this->wire('input')->urlSegment2 == 'unsubscribed') $stop = true;
 			}
-
-			$data[] = array(
-				$status[$u->status],
-				$u->email,
-				$u->firstname,
-				$u->surname,
-				wire('pages')->get(1)->getLanguageValue($u->language, 'name'),
-				($u->timestamp ? date('d.m.Y H:i:s', $u->timestamp) : '')
-			);
+			if (!$stop) {
+				$data[] = array(
+					$status[$u->status],
+					$u->email,
+					$u->firstname,
+					$u->surname,
+					wire('pages')->get(1)->getLanguageValue($u->language, 'name'),
+					($u->timestamp ? date('d.m.Y H:i:s', $u->timestamp) : '')
+				);
+			}
 		}
 
 
