@@ -231,11 +231,18 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 			else
 				$user = $this->wire('users')->find("roles=newsletter, status=" . $filter_status);
 		}
+
+
 		foreach ($user as $u) {
+
 			$status[1] = "Angemeldet";
 			$status[1024] = "Abgemeldet";
 			if ($u->confirmmail == 'sent') {
 				$status[1024] = "Nichtbestätigt";
+				$status[1] = "Nichtbestätigt";
+				if ($filter_status != 9999 && $filter_status != 0) break;
+				if ($this->wire('input')->urlSegment2 == 'subscribed') break;
+				if ($this->wire('input')->urlSegment2 == 'unsubscribed') break;
 			}
 
 			$data[] = array(
