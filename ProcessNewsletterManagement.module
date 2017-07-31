@@ -77,6 +77,7 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 			$filter_status = $this->session->get('ProcessNewsletterFilterField');
 		}
 
+
 		#echo $filter_status;
 		$user = $this->wire('users')->find("roles=newsletter,limit=" . $this->resperpage);
 		if ($filter_status == 9999)
@@ -99,7 +100,7 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 		$table->headerRow($header);
 
 		if ($filter_status != 9999)
-		$table->action(array('Exportiere aktuellen Filter ...' => 'CSV'));
+			$table->action(array('Exportiere aktuellen Filter ...' => 'CSV'));
 
 
 		foreach ($user as $u) {
@@ -115,8 +116,10 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 			$status[9999] = "Nicht bestätigt";
 
 			$userstatus = $u->status;
-			if ($u->confirmmail == 'sent')
+			if ($u->confirmmail == 'sent') {
 				$userstatus = 9999;
+				if ($filter_status != 9999 && $filter_status != 0) break;
+			}
 			$data = array(
 				//($u->status == 1 ? 'Angemeldet' : 'Abgemeldet'),
 				$status[$userstatus],
