@@ -263,6 +263,7 @@ class ProcessNewsletterManagement extends Process implements ConfigurableModule 
 
 		$path = $this->config->paths->files;
 		$fp = fopen($path . 'newsletter_users.csv', 'w');
+		fprintf($fp, chr(0xEF).chr(0xBB).chr(0xBF));
 		foreach ($data as $fields) fputcsv($fp, $fields, ';');
 		fclose($fp);
 		wireSendFile($path . 'newsletter_users.csv', array('forceDownload' => true));
